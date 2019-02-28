@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: lobsters-db-schema-seed
+spec:
+  template:
+    spec:
+      containers:
+        - name: lobsters
+          image: kelseyhightower/lobsters:testing
+          env:
+          - name: DATABASE_URL
+            value: "mysql2://root:password1@mysql.default.svc.cluster.local:3306/lobsters"
+          command:
+            - "/usr/local/bundle/bin/rake"
+            - "db:seed"
+      restartPolicy: Never

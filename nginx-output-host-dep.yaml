@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: host-index
+  labels:
+    k8s-app: nginx-output-host
+data:
+  host-index: |-
+      cat <<EOF > /usr/share/nginx/html/index.html
+      <html>
+      <body>
+      <p>hostname is: $(hostname)</p>
+      <p><em>Thank you for using nginx.</em></p>
+      </body>
+      </html>
+      EOF
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-output-host
+  labels:
+    app: nginx-output-host
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: nginx-output-host
+  template:
+    metadata:
+      labels:
+        app: nginx-output-host
+    spec:
+      containers:
+      - name: nginx-output-host
+        image: nginx
+        volumeMounts:
+        - mountPath: "/var/scripts"
+          name: host-index
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "scripts in /var/scripts"
+          ls -lh /var/scripts
+          echo "copy scripts to /tmp"
+          cp /var/scripts/*.sh /tmp
+          echo "apply 'chmod +x' to /tmp/*.sh"
+          chmod +x /tmp/*.sh
+          echo "execute host-index.sh now"
+          /tmp/host-index.sh
+          nginx -g 'daemon off;'
+      volumes:
+      - name: host-index
+        configMap:
+          name: host-index
+          items:
+            - key: host-index
+              path: host-index.sh
